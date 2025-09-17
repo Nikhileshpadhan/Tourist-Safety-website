@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Alerts Monitoring - Tourist Safety App</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="live-tracking.html">Live Tracking</a>
+        <a href="sos-alerts.html">SOS Alerts</a>
+        <a href="anomaly-detection.html">Anomaly Detection</a>
+        <a href="user-management.html">User Management</a>
+        <a href="#" id="logout">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>SOS Alerts Monitoring</h1>
+        <div class="table-container">
+            <div class="filters">
+                <label for="statusFilter">Filter by Status:</label>
+                <select id="statusFilter">
+                    <option value="all">All</option>
+                    <option value="triggered">Triggered</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+            </div>
+            <table id="sosTable">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Location</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="pagination">
+                <button id="prevBtn" disabled>Previous</button>
+                <span id="pageInfo">Page 1</span>
+                <button id="nextBtn">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/sos-alerts.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>

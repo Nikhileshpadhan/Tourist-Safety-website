@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Tourist Safety App</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="live-tracking.html">Live Tracking</a>
+        <a href="sos-alerts.html">SOS Alerts</a>
+        <a href="anomaly-detection.html">Anomaly Detection</a>
+        <a href="user-management.html">User Management</a>
+        <a href="#" id="logout">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>User Management</h1>
+
+        <div class="table-container">
+            <h3>Current Users</h3>
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="table-container">
+            <h3>Invite New User</h3>
+            <form id="inviteForm">
+                <input type="email" id="inviteEmail" placeholder="Email" required>
+                <label for="inviteRole">Role:</label>
+                <select id="inviteRole" required>
+                    <option value="Viewer">Viewer</option>
+                    <option value="Officer">Officer</option>
+                    <option value="Admin">Admin</option>
+                </select>
+                <button type="submit">Invite User</button>
+            </form>
+            <div id="inviteMessage"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/user-management.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>

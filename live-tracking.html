@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Tracking - Tourist Safety App</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div class="sidebar">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="live-tracking.html">Live Tracking</a>
+        <a href="sos-alerts.html">SOS Alerts</a>
+        <a href="anomaly-detection.html">Anomaly Detection</a>
+        <a href="user-management.html">User Management</a>
+        <a href="#" id="logout">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Live Tracking</h1>
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="js/live-tracking.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>

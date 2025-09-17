@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Dashboard - Tourist Safety App</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div class="sidebar">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="live-tracking.html">Live Tracking</a>
+        <a href="sos-alerts.html">SOS Alerts</a>
+        <a href="anomaly-detection.html">Anomaly Detection</a>
+        <a href="user-management.html">User Management</a>
+        <a href="#" id="logout">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Main Dashboard</h1>
+        <div class="stat-cards">
+            <div class="stat-card" id="active-sos">
+                <h3>Active SOS Alerts</h3>
+                <p id="activeSosCount">0</p>
+            </div>
+            <div class="stat-card" id="tourists-online">
+                <h3>Tourists Online</h3>
+                <p id="touristsOnlineCount">0</p>
+            </div>
+            <div class="stat-card" id="anomalies-detected">
+                <h3>Anomalies Detected</h3>
+                <p id="anomaliesCount">0</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3>Recent SOS Alerts</h3>
+            <table id="sosTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Location</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="table-container">
+            <h3>Incident Hotspots Map</h3>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>
