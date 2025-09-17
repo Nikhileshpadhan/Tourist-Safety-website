@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupRealtime();
     document.getElementById('logout').addEventListener('click', logout);
 
+    // Periodic refresh every 10 seconds
+    setInterval(loadLocations, 10000);
+
     // Check URL for location to center on
     const urlParams = new URLSearchParams(window.location.search);
     const location = urlParams.get('location');

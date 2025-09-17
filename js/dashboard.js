@@ -1,29 +1,29 @@
+// js/dashboard.js
 import { supabase } from './supabase.js';
 import { logout } from './auth.js';
 
-// Initialize dashboard
 document.addEventListener('DOMContentLoaded', () => {
     loadStats();
     loadRecentSOS();
-    initializeMap();
     setupRealtime();
     document.getElementById('logout').addEventListener('click', logout);
 });
 
-// Load dashboard statistics
 async function loadStats() {
     try {
-        // Active SOS Alerts (status = 'triggered')
+        // Active SOS Alerts
         const { count: activeSos } = await supabase
             .from('sos_alerts')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'triggered');
         document.getElementById('activeSosCount').innerText = activeSos || 0;
 
-        // Tourists Online (distinct user_id from live_locations)
+        // **FIXED**: Tourists Online (users active in the last 10 minutes)
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { count: touristsOnline } = await supabase
             .from('live_locations')
-            .select('user_id', { count: 'exact', head: true });
+            .select('user_id', { count: 'exact', head: true })
+            .gte('last_update', tenMinutesAgo);
         document.getElementById('touristsOnlineCount').innerText = touristsOnline || 0;
 
         // Anomalies Detected
@@ -36,98 +36,59 @@ async function loadStats() {
     }
 }
 
-// Load recent 5 SOS alerts
 async function loadRecentSOS() {
-    try {
-        const { data, error } = await supabase
-            .from('sos_alerts')
-            .select('id, location, time, status')
-            .order('time', { ascending: false })
-            .limit(5);
+    const { data, error } = await supabase
+        .from('sos_alerts')
+        .select('id, user_id, location, time, status')
+        .order('time', { ascending: false })
+        .limit(5);
 
-        if (error) throw error;
+    if (error) return console.error('Error loading recent SOS:', error);
+    renderRecentSOSTable(data);
+}
 
-        const tbody = document.querySelector('#sosTable tbody');
-        tbody.innerHTML = '';
-        data.forEach(alert => {
-            const row = `
-                <tr>
-                    <td>${alert.id}</td>
-                    <td>${alert.location}</td>
-                    <td>${new Date(alert.time).toLocaleString()}</td>
-                    <td>${alert.status}</td>
-                    <td><button onclick="viewOnMap('${alert.location}')">View on Map</button></td>
-                </tr>
-            `;
-            tbody.insertAdjacentHTML('beforeend', row);
-        });
-    } catch (error) {
-        console.error('Error loading recent SOS:', error);
+function renderRecentSOSTable(alerts) {
+    const tbody = document.querySelector('#sosTable tbody');
+    tbody.innerHTML = '';
+    alerts.forEach(alert => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${alert.user_id.substring(0, 8)}...</td>
+            <td>${alert.location}</td>
+            <td>${new Date(alert.time).toLocaleString()}</td>
+            <td><span class="status-${alert.status}">${alert.status}</span></td>
+            <td><button class="view-map-btn" data-location="${alert.location}">View on Map</button></td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Event listener for the "View on Map" button
+document.querySelector('#sosTable tbody').addEventListener('click', (event) => {
+    if (event.target.classList.contains('view-map-btn')) {
+        const location = event.target.dataset.location;
+        window.location.href = `live-tracking.html?location=${location}`;
     }
-}
+});
 
-// Initialize Leaflet map with hotspots
-let map;
-function initializeMap() {
-    map = L.map('map').setView([51.505, -0.09], 13); // Default view, update to relevant location
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
 
-    loadHotspots();
-}
 
-// Load SOS locations as markers on map
-async function loadHotspots() {
-    try {
-        const { data, error } = await supabase
-            .from('sos_alerts')
-            .select('location');
 
-        if (error) throw error;
-
-        const markerGroup = L.layerGroup();
-
-        data.forEach(alert => {
-            const [lat, lon] = alert.location.split(',').map(Number);
-            if (lat && lon) {
-                L.marker([lat, lon]).addTo(markerGroup);
-            }
-        });
-
-        markerGroup.addTo(map);
-        map.fitBounds(markerGroup.getBounds());
-    } catch (error) {
-        console.error('Error loading hotspots:', error);
-    }
-}
-
-// Setup Supabase Realtime for notifications
+// **FIXED**: Setup Supabase Realtime to listen for INSERT and UPDATE
 function setupRealtime() {
     supabase
         .channel('sos_alerts_channel')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sos_alerts' }, (payload) => {
-            // Show browser notification
-            if (Notification.permission === 'granted') {
-                new Notification('New SOS Alert Triggered!', { body: `Location: ${payload.new.location}` });
-            } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        new Notification('New SOS Alert Triggered!', { body: `Location: ${payload.new.location}` });
-                    }
-                });
-            }
-
-            // Refresh data
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_alerts' }, (payload) => {
+            console.log('Realtime change received:', payload);
+            
+            // On any change, just reload all the data to keep it simple and consistent
             loadStats();
             loadRecentSOS();
-            loadHotspots(); // Update map if new alert
+
+            // Show a notification only for new alerts
+            if (payload.eventType === 'INSERT') {
+                new Notification('New SOS Alert!', { body: `An alert was triggered at ${payload.new.location}` });
+            }
         })
         .subscribe();
-}
-
-// Function to view alert on map (placeholder, integrate with live-tracking)
-function viewOnMap(location) {
-    // Open live-tracking with centered location
-    window.location.href = `live-tracking.html?location=${location}`;
 }

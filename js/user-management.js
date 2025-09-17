@@ -1,98 +1,76 @@
+// js/user-management.js
 import { supabase } from './supabase.js';
 import { logout } from './auth.js';
 
-// Initialize user management
 document.addEventListener('DOMContentLoaded', () => {
     loadUsers();
     document.getElementById('inviteForm').addEventListener('submit', inviteUser);
     document.getElementById('logout').addEventListener('click', logout);
 });
 
-// Load all users
 async function loadUsers() {
-    try {
-        const { data, error } = await supabase
-            .from('users')
-            .select('*');
-
-        if (error) throw error;
-
-        renderUserTable(data);
-    } catch (error) {
+    const { data, error } = await supabase.from('users').select('*');
+    if (error) {
         console.error('Error loading users:', error);
+        return;
     }
+    renderUserTable(data);
 }
 
-// Render user table
 function renderUserTable(users) {
     const tbody = document.querySelector('#userTable tbody');
     tbody.innerHTML = '';
-
     users.forEach(user => {
         const row = document.createElement('tr');
+        // "Edit Role" button has been removed from this section
         row.innerHTML = `
             <td>${user.email}</td>
             <td>${user.role}</td>
             <td>
-                <button onclick="editRole('${user.id}', '${user.role}')">Edit Role</button>
-                <button onclick="deleteUser('${user.id}')">Delete</button>
+                <button class="delete-user-btn" data-id="${user.id}">Delete</button>
             </td>
         `;
         tbody.appendChild(row);
     });
 }
 
-// Edit user role
-function editRole(userId, currentRole) {
-    // Prompt for new role
-    const newRole = prompt('Enter new role (Admin, Officer, Viewer):', currentRole);
-    if (newRole && ['Admin', 'Officer', 'Viewer'].includes(newRole)) {
-        updateUserRole(userId, newRole);
+// Add event listener for the delete button
+document.querySelector('#userTable tbody').addEventListener('click', (event) => {
+    if (event.target.classList.contains('delete-user-btn')) {
+        const userId = event.target.dataset.id;
+        deleteUser(userId);
     }
-}
+});
 
-// Update user role in database
-async function updateUserRole(userId, role) {
-    try {
-        const { error } = await supabase
-            .from('users')
-            .update({ role })
-            .eq('id', userId);
-
-        if (error) throw error;
-        loadUsers(); // Refresh table
-    } catch (error) {
-        console.error('Error updating role:', error);
-    }
-}
-
-// Delete user
-async function deleteUser(userId) {
-    if (confirm('Are you sure you want to delete this user?')) {
-        try {
-            // Only delete from users table, as admin functions need server-side
-            const { error } = await supabase
-                .from('users')
-                .delete()
-                .eq('id', userId);
-
-            if (error) throw error;
-            loadUsers(); // Refresh table
-        } catch (error) {
-            console.error('Error deleting user:', error);
-        }
-    }
-}
-
-// Invite new user (placeholder)
-function inviteUser(event) {
+async function inviteUser(event) {
     event.preventDefault();
     const email = document.getElementById('inviteEmail').value;
     const role = document.getElementById('inviteRole').value;
+    const inviteMessage = document.getElementById('inviteMessage');
 
-    // Placeholder: in real app, use Supabase admin invite or send email
-    document.getElementById('inviteMessage').innerText = `Invitation sent to ${email} with role ${role}. (Note: This is a placeholder. Implement actual invite logic with server-side code.)`;
+    const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { email, role },
+    });
 
-    // Reset form
+    if (error) {
+        inviteMessage.innerText = `Error: ${error.message}`;
+    } else {
+        inviteMessage.innerText = `Successfully sent invitation to ${email}.`;
+        loadUsers(); // Refresh the table
+    }
     event.target.reset();
+}
+
+async function deleteUser(userId) {
+    if (confirm('Are you sure you want to permanently delete this user?')) {
+        const { error } = await supabase.functions.invoke('delete-user', {
+            body: { userId },
+        });
+        if (error) {
+            alert(`Error deleting user: ${error.message}`);
+        } else {
+            alert('User deleted successfully.');
+            loadUsers();
+        }
+    }
 }

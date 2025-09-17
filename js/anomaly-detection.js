@@ -3,23 +3,10 @@ import { logout } from './auth.js';
 
 // Initialize anomaly detection page
 document.addEventListener('DOMContentLoaded', () => {
-    initializeMap();
     loadAnomalies();
-    loadHeatmap();
     startAnomalyDetection();
     document.getElementById('logout').addEventListener('click', logout);
 });
-
-// Initialize Leaflet map for prediction
-let map;
-function initializeMap() {
-    map = L.map('map').setView([51.505, -0.09], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    loadHeatmap();
-}
 
 // Load and display anomalies list
 async function loadAnomalies() {
@@ -41,47 +28,6 @@ async function loadAnomalies() {
         });
     } catch (error) {
         console.error('Error loading anomalies:', error);
-    }
-}
-
-// Generate predictive heatmap from SOS alerts and anomalies
-async function loadHeatmap() {
-    try {
-        const { data: alerts, error: alertError } = await supabase
-            .from('sos_alerts')
-            .select('location');
-
-        if (alertError) throw alertError;
-
-        const { data: anomalies, error: anomalyError } = await supabase
-            .from('anomalies')
-            .select('location');
-
-        if (anomalyError) throw anomalyError;
-
-        const heatPoints = [];
-
-        // Add SOS locations with intensity 0.5
-        alerts.forEach(alert => {
-            const [lat, lon] = alert.location.split(',').map(Number);
-            if (lat && lon) heatPoints.push([lat, lon, 0.5]);
-        });
-
-        // Add anomaly locations with higher intensity 1.0
-        anomalies.forEach(anomaly => {
-            const [lat, lon] = anomaly.location.split(',').map(Number);
-            if (lat && lon) heatPoints.push([lat, lon, 1.0]);
-        });
-
-        // Add heatmap layer
-        L.heatLayer(heatPoints, {
-            radius: 15,
-            blur: 25,
-            maxZoom: 17,
-            gradient: { 0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 1: 'red' }
-        }).addTo(map);
-    } catch (error) {
-        console.error('Error loading heatmap:', error);
     }
 }
 
@@ -137,10 +83,9 @@ async function detectAnomalies() {
             }
         }
 
-        // Reload anomalies and heatmap
+        // Reload anomalies
         if (anomalyLocations.size > 0) {
             loadAnomalies();
-            loadHeatmap();
         }
     } catch (error) {
         console.error('Error detecting anomalies:', error);
