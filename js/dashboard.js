@@ -5,6 +5,7 @@ import { logout } from './auth.js';
 document.addEventListener('DOMContentLoaded', () => {
     loadStats();
     loadRecentSOS();
+    loadActiveUsers();
     setupRealtime();
     document.getElementById('logout').addEventListener('click', logout);
 });
@@ -74,14 +75,45 @@ document.querySelector('#sosTable tbody').addEventListener('click', (event) => {
 
 
 
-// **FIXED**: Setup Supabase Realtime to listen for INSERT and UPDATE
+// Load active users' locations from last 10 minutes
+async function loadActiveUsers() {
+    try {
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        const { data, error } = await supabase
+            .from('live_locations')
+            .select('user_id, lat, lon, last_update')
+            .gte('last_update', tenMinutesAgo)
+            .order('last_update', { ascending: false });
+
+        if (error) throw error;
+        renderActiveUsersTable(data);
+    } catch (error) {
+        console.error('Error loading active users:', error);
+    }
+}
+
+function renderActiveUsersTable(users) {
+    const tbody = document.querySelector('#activeUsersTable tbody');
+    tbody.innerHTML = '';
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${user.user_id}</td>
+            <td>${user.lat.toFixed(6)}, ${user.lon.toFixed(6)}</td>
+            <td>${new Date(user.last_update).toLocaleString()}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// **FIXED**: Setup Supabase Realtime for multiple channels
 function setupRealtime() {
+    // For SOS alerts
     supabase
         .channel('sos_alerts_channel')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sos_alerts' }, (payload) => {
-            console.log('Realtime change received:', payload);
-            
-            // On any change, just reload all the data to keep it simple and consistent
+            console.log('SOS Realtime change received:', payload);
+
             loadStats();
             loadRecentSOS();
 
@@ -89,6 +121,16 @@ function setupRealtime() {
             if (payload.eventType === 'INSERT') {
                 new Notification('New SOS Alert!', { body: `An alert was triggered at ${payload.new.location}` });
             }
+        })
+        .subscribe();
+
+    // For live locations (to update active users list)
+    supabase
+        .channel('live_locations_dashboard_channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'live_locations' }, () => {
+            console.log('Location change received - updating dashboard');
+            loadStats(); // Update count
+            loadActiveUsers(); // Update active users list
         })
         .subscribe();
 }
